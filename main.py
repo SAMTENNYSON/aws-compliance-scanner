@@ -258,8 +258,10 @@ def generate_html_report(failed_findings, passed_count, total_checks):
     except Exception as e:
         print(f"\n Error generating HTML report: {e}")
 
-# --- MAIN SECTION (MODIFIED FOR COMPLIANCE) ---
-if __name__ == "__main__":
+def run_scan():
+    """
+    Runs all compliance checks and returns the results.
+    """
     print("🚀 Starting Automated AWS Compliance Scan...")
     
     all_checks = [
@@ -281,37 +283,49 @@ if __name__ == "__main__":
         elif result['status'] == "FAIL":
             failed_findings.append(result)
     
+    # Sort by severity
     severity_map = {"Critical": 1, "High": 2, "Medium": 3}
     failed_findings.sort(key=lambda x: severity_map.get(x.get('severity'), 4))
     
     total_checks = len(all_checks)
+    
+    # --- IMPORTANT: We will RETURN the results ---
+    return passed_count, failed_findings, total_checks
+
+
+# --- MAIN SECTION (MODIFIED FOR COMPLIANCE) ---
+if __name__ == "__main__":
+    
+    # 1. Run the scan
+    passed_count, failed_findings, total_checks = run_scan()
+    
+    # 2. Calculate score
     score = (passed_count / total_checks) * 100
     
+    # 3. Print the console report
     print("\n" + "="*40)
     print("      AWS COMPLIANCE AUDIT REPORT")
     print("="*40)
     print(f"\n📊 FINAL SCORE: {score:.0f}% ({passed_count} / {total_checks} checks passed)")
 
     if failed_findings:
-        print("\n FAILED CHECKS (Remediation Required):")
+        print("\n❌ FAILED CHECKS (Remediation Required):")
         for i, finding in enumerate(failed_findings, 1):
             severity = finding.get('severity', 'UNKNOWN')
             print(f"\n  {i}. SEVERITY: {severity}")
             print(f"     CHECK:    {finding['check']}")
-            
-            # --- ADDED compliance printout ---
             compliance = finding.get('compliance', {})
             if compliance:
-                print(f"     MAPPING:  CIS: {compliance.get('CIS', 'N/A')}, ISO: {compliance.get('ISO 27001', 'N/A')}, NIST: {compliance.get('NIST CSF', 'N/A')}")
-            
+                print(f"     MAPPING:  CIS: {compliance.get('CIS', 'N/A')}, ISO: {compliance.get('ISO 2001', 'N/A')}, NIST: {compliance.get('NIST CSF', 'N/A')}")
             details_str = "\n         - " + "\n         - ".join(finding['details'])
             print(f"     DETAILS: {details_str}")
             print(f"     FIX:     {finding['fix']}")
     else:
-        print("\n All checks passed! Your AWS account is in good shape.")
+        print("\n✅ All checks passed! Your AWS account is in good shape.")
         
     print("\n" + "="*40)
     
+    # 4. Generate the HTML report
     generate_html_report(failed_findings, passed_count, total_checks)
     
     print("Scan complete.")

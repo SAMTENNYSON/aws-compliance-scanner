@@ -2,7 +2,7 @@ import boto3
 from botocore.exceptions import ClientError
 import datetime
 
-# --- HELPER FUNCTION (UNCHANGED) ---
+# --- HELPER FUNCTION ---
 def get_all_aws_regions():
     """
     Gets a list of all enabled AWS regions.
@@ -17,8 +17,7 @@ def get_all_aws_regions():
         print(f"Error getting AWS regions: {e}. Defaulting to us-east-1.")
         return ["us-east-1"]
 
-# --- CHECK FUNCTIONS (UNCHANGED) ---
-# (All 5 of your check_... functions are perfect and don't need to change)
+
 def check_s3_public_access():
     """Checks S3 public access. (CIS 1.2.1)"""
     s3_client = boto3.client('s3')
@@ -53,6 +52,7 @@ def check_s3_public_access():
     except ClientError as e:
         return {"status": "ERROR", "check": "S3 Public Access", "details": f"Could not check S3: {e}"}
 
+
 def check_iam_password_policy():
     """Checks IAM password policy strength. (CIS 1.5-1.8)"""
     iam_client = boto3.client('iam')
@@ -79,6 +79,7 @@ def check_iam_password_policy():
                     "compliance": {"CIS": "1.5-1.8", "ISO 27001": "A.9.4.3", "NIST CSF": "PR.AC-1"}}
         else:
             return {"status": "ERROR", "check": "IAM Password Policy", "details": f"Could not check IAM: {e}"}
+
 
 def check_ec2_security_groups():
     """Checks EC2 Security Groups for open SSH in ALL regions. (CIS 5.1)"""
@@ -110,6 +111,7 @@ def check_ec2_security_groups():
                 "fix": "Remove the rule allowing 0.0.0.0/0 on port 22 from the listed security groups.",
                 "compliance": {"CIS": "5.1", "ISO 27001": "A.12.1.2", "NIST CSF": "PR.AC-3"}}
 
+
 def check_cloudtrail_enabled():
     """Checks for a multi-region CloudTrail. (CIS 2.1.1)"""
     cloudtrail_client = boto3.client('cloudtrail')
@@ -136,6 +138,7 @@ def check_cloudtrail_enabled():
 
     except ClientError as e:
         return {"status": "ERROR", "check": "CloudTrail Enabled", "details": f"Could not check CloudTrail: {e}"}
+
 
 def check_rds_publicly_accessible():
     """Checks for public RDS instances in ALL regions. (CIS 6.1)"""
@@ -164,7 +167,8 @@ def check_rds_publicly_accessible():
                 "fix": "Modify the RDS instance and set 'PubliclyAccessible' to 'No' under the 'Connectivity' settings.",
                 "compliance": {"CIS": "6.1", "ISO 27001": "A.9.1.2", "NIST CSF": "PR.DS-2"}}
 
-# --- HTML REPORT FUNCTION (MODIFIED) ---
+
+# --- HTML REPORT FUNCTION ---
 def generate_html_report(passed_findings, failed_findings, total_checks):
     """Generates a simple HTML report from the scan results."""
     
@@ -242,7 +246,7 @@ def generate_html_report(passed_findings, failed_findings, total_checks):
     else:
         html_content += "<h2>✅ All checks passed!</h2>"
 
-    # --- NEW: ADD PASSED CHECKS TO HTML ---
+    # --- PASSED CHECKS TO HTML ---
     if passed_findings:
         html_content += "<h2>✅ Passed Checks</h2>"
         html_content += "<table><tr><th>Check Name</th><th>Details</th></tr>"
@@ -264,7 +268,7 @@ def generate_html_report(passed_findings, failed_findings, total_checks):
     except Exception as e:
         print(f"\n❌ Error generating HTML report: {e}")
 
-# --- RUN SCAN FUNCTION (MODIFIED) ---
+# --- RUN SCAN FUNCTION ---
 def run_scan():
     """
     Runs all compliance checks and returns the results.
@@ -295,12 +299,10 @@ def run_scan():
     failed_findings.sort(key=lambda x: severity_map.get(x.get('severity'), 4))
     
     total_checks = len(all_checks)
-    
-    # --- MODIFIED RETURN VALUE ---
     return passed_findings, failed_findings, total_checks
 
 
-# --- MAIN SECTION (MODIFIED) ---
+# --- MAIN SECTION ---
 if __name__ == "__main__":
     
     # 1. Run the scan
@@ -318,12 +320,12 @@ if __name__ == "__main__":
 
     # --- NEW: PRINT PASSED CHECKS ---
     if passed_findings:
-        print("\n✅ PASSED CHECKS:")
+        print("\n PASSED CHECKS:")
         for finding in passed_findings:
             print(f"  - {finding['check']}")
 
     if failed_findings:
-        print("\n❌ FAILED CHECKS (Remediation Required):")
+        print("\n FAILED CHECKS (Remediation Required):")
         for i, finding in enumerate(failed_findings, 1):
             severity = finding.get('severity', 'UNKNOWN')
             print(f"\n  {i}. SEVERITY: {severity}")
@@ -337,7 +339,7 @@ if __name__ == "__main__":
             print(f"     DETAILS: {details_str}")
             print(f"     FIX:     {finding['fix']}")
     else:
-        print("\n✅ All checks passed! Your AWS account is in good shape.")
+        print("\n All checks passed! Your AWS account is in good shape.")
         
     print("\n" + "="*40)
     

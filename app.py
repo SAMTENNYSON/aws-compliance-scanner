@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from main import run_scan, generate_html_report # <-- We import your functions!
+from main import run_scan, generate_html_report
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -13,12 +13,11 @@ st.set_page_config(
 st.title("🛡️ Automated AWS Security Compliance Checker")
 st.write("This tool scans your AWS account for common security misconfigurations and generates a compliance report.")
 
-# --- Scan Button (MODIFIED) ---
+
 if st.button("Start Security Scan"):
     
     # 1. Run the scan
     with st.spinner("Scanning all AWS regions... (This may take a minute)"):
-        # --- MODIFIED: Added passed_findings ---
         passed_findings, failed_findings, total_checks = run_scan()
         
     st.success("Scan Complete!")
@@ -47,6 +46,7 @@ if st.button("Start Security Scan"):
                 "Remediation": f.get('fix'),
                 "CIS": f.get('compliance', {}).get('CIS', 'N/A'),
                 "ISO 27001": f.get('compliance', {}).get('ISO 27001', 'N/A'),
+                "NIST CSF": f.get('compliance', {}).get('NIST CSF', 'N/A')  # <-- THIS IS THE NEW LINE
             })
         
         st.dataframe(pd.DataFrame(display_data), width='stretch')
@@ -66,7 +66,7 @@ if st.button("Start Security Scan"):
     else:
         st.success("🎉 All checks passed! No security risks found.")
 
-    # --- NEW: SHOW PASSED CHECKS ---
+    # SHOW PASSED CHECKS ---
     if passed_findings:
         with st.expander(f"Show {len(passed_findings)} Passed Checks"):
             passed_data = []

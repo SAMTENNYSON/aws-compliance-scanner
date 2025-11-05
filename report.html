@@ -24,23 +24,28 @@
     </head><body><h1>AWS Security Compliance Report</h1>
     <div class="summary">
         <h2>Scan Summary</h2>
-        <p>Report Generated: 2025-11-06 00:08:13</p>
+        <p>Report Generated: 2025-11-06 01:14:35</p>
         <p><b>Overall Score: <span class="score-fail">80%</span></b></p>
         <p>(4 / 5 checks passed)</p>
     </div>
     <h2>❌ Failed Checks (Remediation Required)</h2><table><tr><th>Severity</th><th>Check Name</th><th>Compliance Mappings</th><th>Finding Details</th><th>Remediation</th></tr>
             <tr>
-                <td class="sev-critical">Critical</td>
-                <td>S3 Public Access</td>
+                <td class="sev-high">High</td>
+                <td>CloudTrail Enabled</td>
                 <td>
-                    <span class="compliance"><b>CIS:</b> 1.2.1</span><br>
-                    <span class="compliance"><b>ISO 27001:</b> A.9.1.2</span><br>
-                    <span class="compliance"><b>NIST CSF:</b> PR.AC-3</span>
+                    <span class="compliance"><b>CIS:</b> 2.1.1</span><br>
+                    <span class="compliance"><b>ISO 27001:</b> A.12.4.1</span><br>
+                    <span class="compliance"><b>NIST CSF:</b> DE.CM-1</span>
                 </td>
-                <td><span class='details'>Bucket 'akia5k55tozt3bysgh5w-b-2' is not configured to block all public access.</span></td>
-                <td class='fix'>Enable 'Block all public access' in the S3 bucket's permissions tab.</td>
+                <td><span class='details'>No multi-region CloudTrail is enabled and logging.</span></td>
+                <td class='fix'>Ensure a trail is set to 'Apply trail to all regions' and is 'Logging'.</td>
             </tr>
             </table><h2>✅ Passed Checks</h2><table><tr><th>Check Name</th><th>Details</th></tr>
+            <tr>
+                <td>S3 Public Access</td>
+                <td>All S3 buckets block public access.</td>
+            </tr>
+            
             <tr>
                 <td>IAM Password Policy</td>
                 <td>IAM password policy is strong.</td>
@@ -49,11 +54,6 @@
             <tr>
                 <td>EC2 Public SSH</td>
                 <td>No security groups allow unrestricted SSH in any region.</td>
-            </tr>
-            
-            <tr>
-                <td>CloudTrail Enabled</td>
-                <td>At least one multi-region CloudTrail is enabled and logging.</td>
             </tr>
             
             <tr>

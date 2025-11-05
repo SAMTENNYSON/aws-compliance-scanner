@@ -17,8 +17,8 @@ def get_all_aws_regions():
         print(f"Error getting AWS regions: {e}. Defaulting to us-east-1.")
         return ["us-east-1"]
 
-# --- CHECK FUNCTIONS (MODIFIED WITH COMPLIANCE MAPPINGS) ---
-
+# --- CHECK FUNCTIONS (UNCHANGED) ---
+# (All 5 of your check_... functions are perfect and don't need to change)
 def check_s3_public_access():
     """Checks S3 public access. (CIS 1.2.1)"""
     s3_client = boto3.client('s3')
@@ -46,7 +46,6 @@ def check_s3_public_access():
         if not findings:
             return {"status": "PASS", "check": "S3 Public Access", "details": "All S3 buckets block public access."}
         else:
-            # ADDED COMPLIANCE
             return {"status": "FAIL", "severity": "Critical", "check": "S3 Public Access", "details": findings, 
                     "fix": "Enable 'Block all public access' in the S3 bucket's permissions tab.",
                     "compliance": {"CIS": "1.2.1", "ISO 27001": "A.9.1.2", "NIST CSF": "PR.AC-3"}}
@@ -69,14 +68,12 @@ def check_iam_password_policy():
             return {"status": "PASS", "check": "IAM Password Policy", "details": "IAM password policy is strong."}
         else:
             details = f"IAM password policy is weak: {', '.join(failures)}."
-            # ADDED COMPLIANCE
             return {"status": "FAIL", "severity": "Medium", "check": "IAM Password Policy", "details": [details], 
                     "fix": "Edit the IAM Account Settings password policy to require uppercase, lowercase, numbers, and symbols.",
                     "compliance": {"CIS": "1.5-1.8", "ISO 27001": "A.9.4.3", "NIST CSF": "PR.AC-1"}}
                 
     except ClientError as e:
         if e.response['Error']['Code'] == 'NoSuchEntity':
-            # ADDED COMPLIANCE
             return {"status": "FAIL", "severity": "Medium", "check": "IAM Password Policy", "details": ["No IAM password policy is set."], 
                     "fix": "Go to IAM > Account Settings and create a password policy.",
                     "compliance": {"CIS": "1.5-1.8", "ISO 27001": "A.9.4.3", "NIST CSF": "PR.AC-1"}}
@@ -109,7 +106,6 @@ def check_ec2_security_groups():
     if not findings:
         return {"status": "PASS", "check": "EC2 Public SSH", "details": "No security groups allow unrestricted SSH in any region."}
     else:
-        # ADDED COMPLIANCE
         return {"status": "FAIL", "severity": "Critical", "check": "EC2 Public SSH", "details": findings, 
                 "fix": "Remove the rule allowing 0.0.0.0/0 on port 22 from the listed security groups.",
                 "compliance": {"CIS": "5.1", "ISO 27001": "A.12.1.2", "NIST CSF": "PR.AC-3"}}
@@ -120,7 +116,6 @@ def check_cloudtrail_enabled():
     try:
         trails = cloudtrail_client.describe_trails()['trailList']
         if not trails:
-            # ADDED COMPLIANCE
             return {"status": "FAIL", "severity": "High", "check": "CloudTrail Enabled", "details": ["No CloudTrail trails are configured."], 
                     "fix": "Create a new CloudTrail trail and apply it to all regions.",
                     "compliance": {"CIS": "2.1.1", "ISO 27001": "A.12.4.1", "NIST CSF": "DE.CM-1"}}
@@ -135,7 +130,6 @@ def check_cloudtrail_enabled():
         if is_logging_globally:
             return {"status": "PASS", "check": "CloudTrail Enabled", "details": "At least one multi-region CloudTrail is enabled and logging."}
         else:
-            # ADDED COMPLIANCE
             return {"status": "FAIL", "severity": "High", "check": "CloudTrail Enabled", "details": ["No multi-region CloudTrail is enabled and logging."], 
                     "fix": "Ensure a trail is set to 'Apply trail to all regions' and is 'Logging'.",
                     "compliance": {"CIS": "2.1.1", "ISO 27001": "A.12.4.1", "NIST CSF": "DE.CM-1"}}
@@ -166,15 +160,15 @@ def check_rds_publicly_accessible():
     if not findings:
         return {"status": "PASS", "check": "RDS Public Access", "details": "No public RDS instances found in any region."}
     else:
-        # ADDED COMPLIANCE
         return {"status": "FAIL", "severity": "Critical", "check": "RDS Public Access", "details": findings, 
                 "fix": "Modify the RDS instance and set 'PubliclyAccessible' to 'No' under the 'Connectivity' settings.",
                 "compliance": {"CIS": "6.1", "ISO 27001": "A.9.1.2", "NIST CSF": "PR.DS-2"}}
 
-# --- HTML REPORT FUNCTION (MODIFIED FOR COMPLIANCE) ---
-def generate_html_report(failed_findings, passed_count, total_checks):
+# --- HTML REPORT FUNCTION (MODIFIED) ---
+def generate_html_report(passed_findings, failed_findings, total_checks):
     """Generates a simple HTML report from the scan results."""
     
+    passed_count = len(passed_findings)
     score = (passed_count / total_checks) * 100
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -183,6 +177,7 @@ def generate_html_report(failed_findings, passed_count, total_checks):
         body { font-family: Arial, sans-serif; margin: 20px; }
         h1 { color: #333; }
         h2 { color: #555; border-bottom: 2px solid #ccc; padding-bottom: 5px; }
+        h3 { color: #444; }
         table { border-collapse: collapse; width: 100%; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
@@ -216,8 +211,7 @@ def generate_html_report(failed_findings, passed_count, total_checks):
     """
     
     if failed_findings:
-        html_content += "<h2> Failed Checks (Remediation Required)</h2>"
-        # --- ADDED Compliance column ---
+        html_content += "<h2>❌ Failed Checks (Remediation Required)</h2>"
         html_content += "<table><tr><th>Severity</th><th>Check Name</th><th>Compliance Mappings</th><th>Finding Details</th><th>Remediation</th></tr>"
         
         for finding in failed_findings:
@@ -226,7 +220,6 @@ def generate_html_report(failed_findings, passed_count, total_checks):
             severity = finding.get('severity', 'Medium')
             severity_class = f"sev-{severity.lower()}"
             
-            # --- Format compliance data ---
             compliance = finding.get('compliance', {})
             compliance_str = ""
             if compliance:
@@ -247,17 +240,31 @@ def generate_html_report(failed_findings, passed_count, total_checks):
             """
         html_content += "</table>"
     else:
-        html_content += "<h2> All checks passed!</h2>"
+        html_content += "<h2>✅ All checks passed!</h2>"
 
+    # --- NEW: ADD PASSED CHECKS TO HTML ---
+    if passed_findings:
+        html_content += "<h2>✅ Passed Checks</h2>"
+        html_content += "<table><tr><th>Check Name</th><th>Details</th></tr>"
+        for finding in passed_findings:
+            html_content += f"""
+            <tr>
+                <td>{finding['check']}</td>
+                <td>{finding['details']}</td>
+            </tr>
+            """
+        html_content += "</table>"
+    
     html_content += "</body></html>"
     
     try:
         with open("report.html", "w", encoding="utf-8") as f:
             f.write(html_content)
-        print(f"\n Successfully generated HTML report: report.html")
+        print(f"\n✅ Successfully generated HTML report: report.html")
     except Exception as e:
-        print(f"\n Error generating HTML report: {e}")
+        print(f"\n❌ Error generating HTML report: {e}")
 
+# --- RUN SCAN FUNCTION (MODIFIED) ---
 def run_scan():
     """
     Runs all compliance checks and returns the results.
@@ -272,14 +279,14 @@ def run_scan():
         check_rds_publicly_accessible
     ]
     
-    passed_count = 0
+    passed_findings = [] # <-- NEW
     failed_findings = []
 
     print("   (Scanning all regions, this may take a moment...)")
     for check_func in all_checks:
         result = check_func()
         if result['status'] == "PASS":
-            passed_count += 1
+            passed_findings.append(result) # <-- NEW
         elif result['status'] == "FAIL":
             failed_findings.append(result)
     
@@ -289,17 +296,18 @@ def run_scan():
     
     total_checks = len(all_checks)
     
-    # --- IMPORTANT: We will RETURN the results ---
-    return passed_count, failed_findings, total_checks
+    # --- MODIFIED RETURN VALUE ---
+    return passed_findings, failed_findings, total_checks
 
 
-# --- MAIN SECTION (MODIFIED FOR COMPLIANCE) ---
+# --- MAIN SECTION (MODIFIED) ---
 if __name__ == "__main__":
     
     # 1. Run the scan
-    passed_count, failed_findings, total_checks = run_scan()
+    passed_findings, failed_findings, total_checks = run_scan()
     
     # 2. Calculate score
+    passed_count = len(passed_findings)
     score = (passed_count / total_checks) * 100
     
     # 3. Print the console report
@@ -308,15 +316,23 @@ if __name__ == "__main__":
     print("="*40)
     print(f"\n📊 FINAL SCORE: {score:.0f}% ({passed_count} / {total_checks} checks passed)")
 
+    # --- NEW: PRINT PASSED CHECKS ---
+    if passed_findings:
+        print("\n✅ PASSED CHECKS:")
+        for finding in passed_findings:
+            print(f"  - {finding['check']}")
+
     if failed_findings:
         print("\n❌ FAILED CHECKS (Remediation Required):")
         for i, finding in enumerate(failed_findings, 1):
             severity = finding.get('severity', 'UNKNOWN')
             print(f"\n  {i}. SEVERITY: {severity}")
             print(f"     CHECK:    {finding['check']}")
+            
             compliance = finding.get('compliance', {})
             if compliance:
-                print(f"     MAPPING:  CIS: {compliance.get('CIS', 'N/A')}, ISO: {compliance.get('ISO 2001', 'N/A')}, NIST: {compliance.get('NIST CSF', 'N/A')}")
+                print(f"     MAPPING:  CIS: {compliance.get('CIS', 'N/A')}, ISO: {compliance.get('ISO 27001', 'N/A')}, NIST: {compliance.get('NIST CSF', 'N/A')}")
+            
             details_str = "\n         - " + "\n         - ".join(finding['details'])
             print(f"     DETAILS: {details_str}")
             print(f"     FIX:     {finding['fix']}")
@@ -326,6 +342,6 @@ if __name__ == "__main__":
     print("\n" + "="*40)
     
     # 4. Generate the HTML report
-    generate_html_report(failed_findings, passed_count, total_checks)
+    generate_html_report(passed_findings, failed_findings, total_checks)
     
     print("Scan complete.")

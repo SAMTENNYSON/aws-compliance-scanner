@@ -13,16 +13,18 @@ st.set_page_config(
 st.title("🛡️ Automated AWS Security Compliance Checker")
 st.write("This tool scans your AWS account for common security misconfigurations and generates a compliance report.")
 
-# --- Scan Button ---
+# --- Scan Button (MODIFIED) ---
 if st.button("Start Security Scan"):
     
     # 1. Run the scan
     with st.spinner("Scanning all AWS regions... (This may take a minute)"):
-        passed_count, failed_findings, total_checks = run_scan()
+        # --- MODIFIED: Added passed_findings ---
+        passed_findings, failed_findings, total_checks = run_scan()
         
     st.success("Scan Complete!")
     
     # 2. Calculate score
+    passed_count = len(passed_findings)
     score = (passed_count / total_checks) * 100
     
     # --- Display Summary Metrics ---
@@ -34,9 +36,8 @@ if st.button("Start Security Scan"):
 
     # --- Display Failed Findings ---
     if failed_findings:
-        st.error("The following security risks were found:")
+        st.error(f"Found {len(failed_findings)} security risk(s):")
         
-        # We'll create a simple list of dicts to display as a table
         display_data = []
         for f in failed_findings:
             display_data.append({
@@ -48,16 +49,13 @@ if st.button("Start Security Scan"):
                 "ISO 27001": f.get('compliance', {}).get('ISO 27001', 'N/A'),
             })
         
-        # Display as an interactive dataframe
-        st.dataframe(pd.DataFrame(display_data), width='stretch') 
+        st.dataframe(pd.DataFrame(display_data), width='stretch')
         
         # --- Add a download button for the HTML report ---
-        # First, we need to generate the report
-        generate_html_report(failed_findings, passed_count, total_checks)
-        # Then, we read the file
+        generate_html_report(passed_findings, failed_findings, total_checks)
         with open("report.html", "r", encoding="utf-8") as f:
             html_data = f.read()
-        # Finally, we add the download button
+        
         st.download_button(
             label="Download Full HTML Report",
             data=html_data,
@@ -67,3 +65,14 @@ if st.button("Start Security Scan"):
         
     else:
         st.success("🎉 All checks passed! No security risks found.")
+
+    # --- NEW: SHOW PASSED CHECKS ---
+    if passed_findings:
+        with st.expander(f"Show {len(passed_findings)} Passed Checks"):
+            passed_data = []
+            for f in passed_findings:
+                passed_data.append({
+                    "Check": f.get('check'),
+                    "Details": f.get('details')
+                })
+            st.dataframe(pd.DataFrame(passed_data), width='stretch')
